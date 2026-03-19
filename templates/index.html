@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bark.com AI Lead Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Base ───────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #141720;
+      --surface2:  #1c2030;
+      --border:    #252b3a;
+      --accent:    #6366f1;
+      --accent2:   #818cf8;
+      --green:     #22c55e;
+      --yellow:    #eab308;
+      --red:       #ef4444;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --radius:    12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ─────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #e2e8f0, var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .pipeline-pill {
+      margin-left: auto;
+      display: flex;
+      gap: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .pipeline-pill span {
+      padding: 4px 10px;
+      border-radius: 999px;
+      transition: all .3s;
+    }
+    .pipeline-pill span.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* ── Sidebar ─────────────────────────────── */
+    aside {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+
+    .form-group label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .form-group input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.82rem;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      transition: border-color .2s;
+      outline: none;
+    }
+    .form-group input:focus { border-color: var(--accent); }
+    .form-group input::placeholder { color: #374151; }
+
+    .note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.5;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* ── Run Button ───────────────────────────── */
+    #run-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: opacity 0.2s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #run-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    #run-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .spinner.visible { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ICP Box */
+    .icp-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      flex-grow: 1;
+    }
+
+    .icp-tag {
+      display: inline-block;
+      background: rgba(99,102,241,.18);
+      color: var(--accent2);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin: 3px 3px 3px 0;
+    }
+
+    /* ── Main Panel ──────────────────────────── */
+    main {
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    /* Console */
+    .console {
+      background: #0a0c10;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      overflow-y: auto;
+      max-height: 220px;
+      min-height: 100px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+    }
+
+    .log-line { color: #94a3b8; }
+    .log-line.info   { color: #7dd3fc; }
+    .log-line.success{ color: var(--green); }
+    .log-line.error  { color: var(--red); }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red    { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green  { background: #22c55e; }
+    .console-title { font-size: 0.75rem; color: var(--muted); margin-left: 4px; }
+
+    /* Leads Grid */
+    .leads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .lead-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: fadeUp .4s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .lead-card-header { display: flex; align-items: flex-start; gap: 12px; }
+
+    .score-ring {
+      width: 52px; height: 52px; flex-shrink: 0;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      position: relative;
+    }
+    .score-ring.high   { background: rgba(34,197,94,.15); color: var(--green);  border: 2px solid var(--green);  }
+    .score-ring.medium { background: rgba(234,179,8,.15); color: var(--yellow); border: 2px solid var(--yellow); }
+    .score-ring.low    { background: rgba(239,68,68,.15); color: var(--red);    border: 2px solid var(--red);    }
+
+    .lead-title { font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
+
+    .lead-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .meta-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .badge-high   { background: rgba(34,197,94,.15); color: var(--green);  }
+    .badge-medium { background: rgba(234,179,8,.15);  color: var(--yellow); }
+    .badge-low    { background: rgba(239,68,68,.15);  color: var(--red);   }
+
+    .reasoning {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.55;
+      font-style: italic;
+    }
+
+    /* Pitch */
+    .pitch-box {
+      background: rgba(99,102,241,.07);
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .pitch-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--accent2);
+      margin-bottom: 10px;
+    }
+    .pitch-text {
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+    }
+
+    /* Summary Bar */
+    #summary {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--green);
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      gap: 32px;
+      animation: fadeUp .4s ease;
+    }
+    #summary.visible {
+      display: flex;
+      align-items: center;
+    }
+    .stat { display: flex; flex-direction: column; gap: 3px; }
+    .stat-value { font-size: 1.6rem; font-weight: 700; color: var(--green); }
+    .stat-label { font-size: 0.72rem; color: var(--muted); }
+    .stat-divider { width: 1px; height: 40px; background: var(--border); }
+    .summary-check {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--green);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      aside { border-right: none; border-bottom: 1px solid var(--border); }
+      main  { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── HEADER ───────────────────────────── -->
+  <header>
+    <div class="logo-icon">&#129302;</div>
+    <div>
+      <h1>Bark.com AI Lead Agent</h1>
+      <p>Automated lead discovery, scoring &amp; pitch generation</p>
+    </div>
+    <div class="pipeline-pill" id="pipeline-pills">
+      <span id="pill-1">1. Scrape</span>
+      <span id="pill-2">2. Score</span>
+      <span id="pill-3">3. Pitch</span>
+    </div>
+  </header>
+
+  <!-- ── SIDEBAR ──────────────────────────── -->
+  <aside>
+    <div>
+      <p class="section-label">Configuration</p>
+      <div class="form-group">
+        <label>Bark Email</label>
+        <input id="email" type="email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label>Bark Password</label>
+        <input id="password" type="password" placeholder="••••••••"/>
+      </div>
+      <div class="form-group">
+        <label>OpenAI API Key</label>
+        <input id="api_key" type="password" placeholder="sk-proj-..."/>
+      </div>
+      <p class="note">
+        Leave credentials blank to run a <strong>demo with mock leads</strong>
+        and see the full AI pipeline in action.
+      </p>
+    </div>
+
+    <div>
+      <p class="section-label">Ideal Customer Profile</p>
+      <div class="icp-box">
+        <span class="icp-tag">Web Development</span>
+        <span class="icp-tag">E-commerce</span>
+        <span class="icp-tag">&#62; $2,000 budget</span>
+        <span class="icp-tag">Custom Builds</span>
+        <span class="icp-tag">SaaS</span>
+        <span class="icp-tag">Shopify</span>
+        <p style="margin-top:10px; font-size:0.72rem; color:var(--muted); line-height:1.5;">
+          Leads scored 0.0 &rarr; 1.0 against this profile by GPT-4o.<br/>
+          Score &ge; 0.8 triggers pitch generation.
+        </p>
+      </div>
+    </div>
+
+    <button id="run-btn" onclick="runAgent()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-text">&#9654; Run Agent</span>
+    </button>
+  </aside>
+
+  <!-- ── MAIN ─────────────────────────────── -->
+  <main>
+
+    <!-- Console log -->
+    <div>
+      <div class="console-header">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <span class="console-title">Agent Console</span>
+      </div>
+      <div class="console" id="console">
+        <span class="log-line">Waiting for agent to start...</span>
+      </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div id="summary">
+      <div class="stat">
+        <span class="stat-value" id="stat-total">0</span>
+        <span class="stat-label">Leads Processed</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="stat-high">0</span>
+        <span class="stat-label">High-Value Leads</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="stat-pitches">0</span>
+        <span class="stat-label">Pitches Generated</span>
+      </div>
+      <div class="summary-check">
+        &#10003; Pipeline Complete &mdash; Video saved to <code style="font-size:0.75rem;margin-left:6px">videos/</code>
+      </div>
+    </div>
+
+    <!-- Leads output -->
+    <div>
+      <p class="section-label" style="margin-bottom:16px">Lead Results</p>
+      <div class="leads-grid" id="leads-grid">
+        <div class="empty">
+          <div class="empty-icon">&#128269;</div>
+          <p>Click <strong>Run Agent</strong> to start discovering leads.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const leadCards = {};   // title -> card DOM element
+
+  function log(msg, cls = '') {
+    const console_ = document.getElementById('console');
+    const line = document.createElement('div');
+    line.className = 'log-line ' + cls;
+    line.textContent = '> ' + msg;
+    console_.appendChild(line);
+    console_.scrollTop = console_.scrollHeight;
+  }
+
+  function setPill(step) {
+    ['pill-1','pill-2','pill-3'].forEach((id, i) => {
+      document.getElementById(id).className = (i + 1 <= step) ? 'active' : '';
+    });
+  }
+
+  function createLeadCard(data) {
+    const { title, budget, location, score, reasoning } = data;
+    const scoreClass = score >= 0.8 ? 'high' : score >= 0.5 ? 'medium' : 'low';
+    const badgeClass = score >= 0.8 ? 'badge-high' : score >= 0.5 ? 'badge-medium' : 'badge-low';
+    const badgeText  = score >= 0.8 ? 'High Value' : score >= 0.5 ? 'Medium' : 'Low Value';
+
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.innerHTML = `
+      <div class="lead-card-header">
+        <div class="score-ring ${scoreClass}">${score.toFixed(2)}</div>
+        <div>
+          <div class="lead-title">${title}</div>
+          <div style="margin-top:6px">
+            <span class="badge ${badgeClass}">${badgeText}</span>
+          </div>
+        </div>
+      </div>
+      <div class="lead-meta">
+        <span class="meta-chip">&#128184; ${budget}</span>
+        <span class="meta-chip">&#127759; ${location}</span>
+      </div>
+      <p class="reasoning">"${reasoning}"</p>
+      <div class="pitch-placeholder" style="font-size:.75rem;color:var(--muted);">
+        ${score >= 0.8 ? 'Generating pitch...' : 'Score too low for pitch.'}
+      </div>
+    `;
+    leadCards[title] = card;
+    return card;
+  }
+
+  function attachPitch(title, pitch) {
+    const card = leadCards[title];
+    if (!card) return;
+    const placeholder = card.querySelector('.pitch-placeholder');
+    const box = document.createElement('div');
+    box.className = 'pitch-box';
+    box.innerHTML = `
+      <div class="pitch-label">&#9997; AI-Generated Pitch</div>
+      <div class="pitch-text">${pitch}</div>
+    `;
+    placeholder.replaceWith(box);
+  }
+
+  async function runAgent() {
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    document.getElementById('spinner').classList.add('visible');
+    document.getElementById('btn-text').textContent = 'Running...';
+    document.getElementById('summary').classList.remove('visible');
+
+    // Clear console and grid
+    document.getElementById('console').innerHTML = '';
+    document.getElementById('leads-grid').innerHTML = '';
+    Object.keys(leadCards).forEach(k => delete leadCards[k]);
+
+    log('Agent started.', 'info');
+    setPill(1);
+
+    const payload = {
+      email:    document.getElementById('email').value,
+      password: document.getElementById('password').value,
+      api_key:  document.getElementById('api_key').value,
+    };
+
+    const response = await fetch('/run-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop();
+
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue;
+        const jsonStr = part.slice(6).trim();
+        if (!jsonStr) continue;
+
+        let msg;
+        try { msg = JSON.parse(jsonStr); } catch { continue; }
+
+        switch (msg.type) {
+          case 'log':
+            const isSuccess = msg.data.msg.toLowerCase().includes('complete') || msg.data.msg.toLowerCase().includes('done');
+            log(msg.data.msg, isSuccess ? 'success' : 'info');
+            if (msg.data.msg.includes('Part 2') || msg.data.msg.includes('scoring')) setPill(2);
+            if (msg.data.msg.includes('Part 3') || msg.data.msg.includes('pitch'))   setPill(3);
+            break;
+
+          case 'lead_scored':
+            const card = createLeadCard(msg.data);
+            document.getElementById('leads-grid').appendChild(card);
+            break;
+
+          case 'pitch_ready':
+            attachPitch(msg.data.title, msg.data.pitch);
+            break;
+
+          case 'error':
+            log('ERROR: ' + msg.data.msg, 'error');
+            break;
+
+          case 'done':
+            document.getElementById('stat-total').textContent   = msg.data.total;
+            document.getElementById('stat-high').textContent    = msg.data.high_value;
+            document.getElementById('stat-pitches').textContent = msg.data.pitches;
+            document.getElementById('summary').classList.add('visible');
+            log('Agent finished successfully.', 'success');
+            break;
+
+          case 'end':
+            break;
+        }
+      }
+    }
+
+    btn.disabled = false;
+    document.getElementById('spinner').classList.remove('visible');
+    document.getElementById('btn-text').textContent = '&#9654; Run Agent Again';
+  }
+</script>
+
+</body>
+</html>
